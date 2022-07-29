@@ -1,0 +1,200 @@
+openapi: 3.0.0
+
+paths:
+  /users/{id}/children:
+    get:
+      description: Gets the children of a given user
+        -[ninja role] can see own children
+        -[admin role] can see children of all users
+      summary: Gets the children of a given user
+      operationId: getUserChildren
+      x-roles: [admin, ninja]
+      security:
+        - bearerAuth: []
+      tags:
+        - user
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/ChildList'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    post:
+      description:
+        Creates a user that is linked to the user belonging to the id.
+        Makes user belonging to the id parent of the created user.
+        -[ninja role] can make children for own account
+        -[admin role] can make children for all accounts
+      summary: Creates a user that is linked to the given user
+      operationId: createChild
+      x-roles: [admin, ninja]
+      security:
+        - bearerAuth: []
+      tags:
+        - user
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      requestBody:
+        $ref: '#/components/requestBodies/PostChildBody'
+      responses:
+        '201':
+          description: Child created
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Child'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: 'users.yaml#/components/schemas/UserError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    patch:
+      description:
+        Detaches a child from the giver user.
+        The child will get its own account and login details.
+        -[ninja role] can detach own children
+        -[admin role] can detach children from all users
+      summary: Detaches a child from the given user
+      requestBody:
+        $ref: '#/components/requestBodies/PatchChildBody'
+      operationId: detachChild
+      x-roles: [admin, ninja]
+      security:
+        - bearerAuth: []
+      tags:
+        - user
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '200':
+          description: Successfully detached child
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: 'core.yaml#/components/schemas/Error'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+components:
+  requestBodies:
+    PostChildBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NewChild'
+
+    PatchChildBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - id
+              - email
+            properties:
+              id:
+                type: string
+                description: The ID of the child that should be detached
+              email:
+                type: string
+                description: The email you want to give the child and send the email to.
+
+  schemas:
+    NewChild:
+      allOf:
+        - $ref: 'users.yaml#/components/schemas/BasicUser'
+        - type: object
+          properties:
+            email:
+              type: string
+              format: email
+
+    Child:
+      allOf:
+        - $ref: "#/components/schemas/NewChild"
+        - type: object
+          required:
+            - id
+            - registrationDate
+            - _links
+          properties:
+            id:
+              type: string
+            registrationDate:
+              type: string
+              format: date
+            archived:
+              type: boolean
+              description: This needs to be in the get if an admin gets the (archived) user,
+                otherwise a 404 should be thrown if there is a GET on an archived user.
+                Recovering an archived user is done with a PATCH.
+            _links:
+              type: object
+              required:
+                - self
+              properties:
+                self:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                users:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+
+    ChildList:
+      description: Model for a list of children
+      type: object
+      required:
+        - _embedded
+        - _links
+      properties:
+        _embedded:
+          type: object
+          required:
+            - children
+          properties:
+            children:
+              type: array
+              items:
+                $ref: '#/components/schemas/Child'
+            count:
+              $ref: 'core.yaml#/components/schemas/Count'
+        _links:
+          type: object
+          required:
+            - self
+          properties:
+            self:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            patch:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            root:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+        _templates:
+          type: object
+          properties:
+            patch:
+              $ref: 'core.yaml#/components/schemas/FormTemplate'

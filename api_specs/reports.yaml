@@ -1,0 +1,899 @@
+openapi: 3.0.0
+
+paths:
+  /reports:
+    get:
+      description:
+        Gets the root for the report routes.
+        - [admin] can see all links
+        - [lead] can see all links except for dojo reports
+      summary: Gets the root for the report routes
+      x-roles: [admin, lead]
+      security:
+        - bearerAuth: []
+      operationId: getReportRoot
+      tags:
+        - report
+      responses:
+        '200':
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/ReportRoot'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /reports/dojos:
+    get:
+      description:
+        Gets a (filtered) list of dojo amounts that are spaced with the specified timescale (admin role).
+      summary: Gets the amount of dojos in a timeinterval with the specified time scale (admin role)
+      x-roles: [admin]
+      security:
+        - bearerAuth: []
+      operationId: getReportDojos
+      tags:
+        - report
+      parameters:
+        - $ref: '#/components/parameters/timescale'
+        - $ref: '#/components/parameters/dateMin'
+        - $ref: '#/components/parameters/dateMax'
+        - $ref: '#/components/parameters/zipCode'
+        - $ref: '#/components/parameters/city'
+        - $ref: '#/components/parameters/region'
+        - $ref: '#/components/parameters/country'
+        - $ref: '#/components/parameters/tagIds'
+        - $ref: '#/components/parameters/languages'
+        - $ref: '#/components/parameters/archived'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+            text/csv:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportDojosError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /reports/users:
+    get:
+      description:
+        Gets a (filtered) list of amounts of users that are spaced with the specified timescale.
+        A lead can only see users that are registered or subscribed to his/her dojo.
+        An admin can see all amounts over all the dojos (lead admin role).
+      summary: Gets the amount of users in a timeinterval with the specified time scale (lead admin role).
+      x-roles: [admin, lead]
+      security:
+        - bearerAuth: []
+      operationId: getReportUsers
+      tags:
+        - report
+      parameters:
+        - $ref: '#/components/parameters/timescale'
+        - $ref: '#/components/parameters/dateMin'
+        - $ref: '#/components/parameters/dateMax'
+        - $ref: '#/components/parameters/region'
+        - $ref: '#/components/parameters/zipCode'
+        - $ref: '#/components/parameters/city'
+        - $ref: '#/components/parameters/country'
+        - $ref: '#/components/parameters/language'
+        - $ref: '#/components/parameters/ageMin'
+        - $ref: '#/components/parameters/ageMax'
+        - $ref: '#/components/parameters/gender'
+        - $ref: '#/components/parameters/archived'
+        - $ref: '#/components/parameters/subscribedDojoId'
+        - $ref: '#/components/parameters/registratedDojoId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+            text/csv:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportUsersError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /reports/events:
+    get:
+      description:
+        Gets a (filtered) list of event amounts that are spaced with the specified timescale.
+        A lead can only see amounts of events of his/her dojo.
+        An admin can see all amounts over all the dojos (lead admin role).
+      summary: Gets the amount of events in a timeinterval with the specified time scale (lead admin role)..
+      security:
+        - bearerAuth: []
+      x-roles: [admin, lead]
+      operationId: getReportEvents
+      tags:
+        - report
+      parameters:
+        - $ref: '#/components/parameters/timescale'
+        - $ref: '#/components/parameters/dateMin'
+        - $ref: '#/components/parameters/dateMax'
+        - $ref: '#/components/parameters/dojoId'
+        - $ref: '#/components/parameters/cancelled'
+        - $ref: '#/components/parameters/archived'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+            text/csv:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportEventsError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /reports/event-participations:
+    get:
+      description:
+        Gets a (filtered) list of users with the amount of events they participated in.
+      summary: Gets a list of users with the amount of events they participated in.
+      security:
+        - bearerAuth: []
+      x-roles: [admin]
+      operationId: getReportEventParticipations
+      tags:
+        - report
+      parameters:
+        - $ref: '#/components/parameters/dateMin'
+        - $ref: '#/components/parameters/dateMax'
+        - $ref: '#/components/parameters/region'
+        - $ref: '#/components/parameters/zipCode'
+        - $ref: '#/components/parameters/city'
+        - $ref: '#/components/parameters/country'
+        - $ref: '#/components/parameters/language'
+        - $ref: '#/components/parameters/ageMin'
+        - $ref: '#/components/parameters/ageMax'
+        - $ref: '#/components/parameters/gender'
+        - $ref: '#/components/parameters/dojoId'
+        - $ref: '#/components/parameters/archived'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/EventParticipationsList'
+            text/csv:
+              schema:
+                $ref: '#/components/schemas/EventParticipationsList'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportEventParticipationsError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /reports/sessions:
+    get:
+      description:
+        Gets a (filtered) list of session amounts that are spaced with the specified timescale.
+        A lead can only see amounts of sessions of his/her dojo.
+        An admin can see all amounts over all the dojos (lead admin role).
+      summary: Gets the amount of sessions in a timeinterval with the specified time scale (lead admin role).
+      security:
+        - bearerAuth: []
+      operationId: getReportSessions
+      x-roles: [admin, lead]
+      tags:
+        - report
+      parameters:
+        - $ref: '#/components/parameters/timescale'
+        - $ref: '#/components/parameters/dateMin'
+        - $ref: '#/components/parameters/dateMax'
+        - $ref: '#/components/parameters/minAge'
+        - $ref: '#/components/parameters/maxAge'
+        - $ref: '#/components/parameters/dojoId'
+        - $ref: '#/components/parameters/eventId'
+        - $ref: '#/components/parameters/tagIds'
+        - $ref: '#/components/parameters/technologyIds'
+        - $ref: '#/components/parameters/archived'
+        - $ref: '#/components/parameters/cancelled'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+            text/csv:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportSessionsError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /reports/tickets:
+    get:
+      description: Links for ticket reports
+      summary: Links for ticket reports
+      security:
+        - bearerAuth: []
+      operationId: getReportTickets
+      x-roles: [admin, lead]
+      tags:
+        - report
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/ReportTicketsRoot"
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /reports/tickets/ninja:
+    get:
+      description:
+        Gets a (filtered) list of ninja ticket amounts that are spaced with the specified timescale.
+        Leads can only see ninja tickets of their own dojos.
+      summary: Gets the amount of ninja tickets in a timeinterval with the specified time scale.
+      security:
+        - bearerAuth: []
+      operationId: getReportNinjaTickets
+      x-roles: [admin, lead]
+      tags:
+        - report
+      parameters:
+        - $ref: '#/components/parameters/timescale'
+        - $ref: '#/components/parameters/dateMin'
+        - $ref: '#/components/parameters/dateMax'
+        - $ref: '#/components/parameters/dojoId'
+        - $ref: '#/components/parameters/eventId'
+        - $ref: '#/components/parameters/sessionId'
+        - $ref: '#/components/parameters/userId'
+        - $ref: '#/components/parameters/ninjaTicketStatus'
+        - $ref: '#/components/parameters/archived'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+            text/csv:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportTicketsError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /reports/tickets/coach:
+    get:
+      description:
+        Gets a (filtered) list of coach ticket amounts that are spaced with the specified timescale.
+        Leads can only see coach tickets of their own dojos.
+      summary: Gets the amount of coach tickets in a timeinterval with the specified time scale.
+      security:
+        - bearerAuth: []
+      operationId: getReportCoachTickets
+      x-roles: [admin, lead]
+      tags:
+        - report
+      parameters:
+        - $ref: '#/components/parameters/timescale'
+        - $ref: '#/components/parameters/dateMin'
+        - $ref: '#/components/parameters/dateMax'
+        - $ref: '#/components/parameters/dojoId'
+        - $ref: '#/components/parameters/eventId'
+        - $ref: '#/components/parameters/userId'
+        - $ref: '#/components/parameters/coachTicketStatus'
+        - $ref: '#/components/parameters/archived'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+            text/csv:
+              schema:
+                $ref: '#/components/schemas/AmountList'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportTicketsError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+components:
+  schemas:
+    # Schemas for the /report/* routes
+
+    EventParticipationsList:
+      description: Model for a list of users with the amount of events they participated in.
+      type: object
+      required:
+        - _embedded
+        - _links
+      properties:
+        _embedded:
+          type: object
+          required:
+            - eventParticipations
+          properties:
+            eventParticipations:
+              type: array
+              items:
+                type: object
+                required:
+                  - user
+                  - eventAmount
+                properties:
+                  user:
+                    $ref: "users.yaml#/components/schemas/User"
+                  eventAmount:
+                    type: integer
+                    description: Amount of events that the user participated in.
+            count:
+              $ref: 'core.yaml#/components/schemas/Count'
+        _links:
+          type: object
+          required:
+            - self
+          properties:
+            self:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            root:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+
+    AmountList:
+      description: Model for a list of amounts
+      type: object
+      required:
+        - _embedded
+        - _links
+      properties:
+        _embedded:
+          type: object
+          required:
+            - amounts
+          properties:
+            amounts:
+              type: array
+              items:
+                $ref: '#/components/schemas/Amount'
+            count:
+                $ref: 'core.yaml#/components/schemas/Count'
+        _links:
+          type: object
+          required:
+            - self
+          properties:
+            self:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            root:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+
+    Amount:
+      description: Model of an amount
+      type: object
+      properties:
+        startTime:
+          type: string
+          format: date-time
+          description: Date and time on which the timestep starts
+        endTime:
+          type: string
+          format: date-time
+          description: Date and time on which the timestep ends
+        amount:
+          type: integer
+          description: Amount of entities that meet the specified constraints
+
+    ReportRoot:
+      type: object
+      required:
+        - _links
+      properties:
+        _links:
+          type: object
+          properties:
+            self:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            dojoReports:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            userReports:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            eventReports:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            eventParticipations:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            sessionReports:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            ticketReports:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+
+    ReportTicketsRoot:
+      type: object
+      description: Ticket report root links
+      required:
+        - _links
+      properties:
+        _links:
+          type: object
+          properties:
+            self:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            ninjaTicketReports:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            coachTicketReports:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            root:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+
+    ReportDojosError:
+      description: Error that specifies what was wrong in the query parameters
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                timescale:
+                  type: string
+                dateMin:
+                  type: string
+                dateMax:
+                  type: string
+                zipCode:
+                  type: string
+                city:
+                  type: string
+                region:
+                  type: string
+                country:
+                  type: string
+                tagIds:
+                  type: string
+                languages:
+                  type: string
+                archived:
+                  type: string
+
+    ReportUsersError:
+      description: Error that specifies what was wrong in the query parameters
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                timescale:
+                  type: string
+                dateMin:
+                  type: string
+                dateMax:
+                  type: string
+                zipCode:
+                  type: string
+                city:
+                  type: string
+                region:
+                  type: string
+                country:
+                  type: string
+                language:
+                  type: string
+                ageMin:
+                  type: string
+                ageMax:
+                  type: string
+                gender:
+                  type: string
+                archived:
+                  type: string
+                subscribedDojoId:
+                  type: string
+                registratedDojoId:
+                  type: string
+
+    ReportEventsError:
+      description: Error that specifies what was wrong in the query parameters
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                timescale:
+                  type: string
+                dateMin:
+                  type: string
+                dateMax:
+                  type: string
+                dojoId:
+                  type: string
+                cancelled:
+                  type: string
+                archived:
+                  type: string
+    
+    ReportEventParticipationsError:
+      description: Error that specifies what was wrong in the query parameters
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                timescale:
+                  type: string
+                dateMin:
+                  type: string
+                dateMax:
+                  type: string
+                region:
+                  type: string
+                zipCode:
+                  type: string
+                city:
+                  type: string
+                country:
+                  type: string
+                language:
+                  type: string
+                ageMin:
+                  type: string
+                ageMax:
+                  type: string
+                gender:
+                  type: string
+                dojoId:
+                  type: string
+                archived:
+                  type: string
+
+    ReportSessionsError:
+      description: Error that specifies what was wrong in the query parameters
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                timescale:
+                  type: string
+                dateMin:
+                  type: string
+                dateMax:
+                  type: string
+                minAge:
+                  type: string
+                maxAge:
+                  type: string
+                dojoId:
+                  type: string
+                eventId:
+                  type: string
+                tagIds:
+                  type: string
+                technologyIds:
+                  type: string
+                archived:
+                  type: string
+                cancelled:
+                  type: string
+
+    ReportTicketsError:
+      description: Error that specifies what was wrong in the query parameters
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                timescale:
+                  type: string
+                dateMin:
+                  type: string
+                dateMax:
+                  type: string
+                dojoId:
+                  type: string
+                eventId:
+                  type: string
+                userId:
+                  type: string
+                status:
+                  type: string
+                archived:
+                  type: string
+
+  parameters:
+    zipCode:
+      in: query
+      name: zipCode
+      description: Filter by zip code
+      schema:
+        type: string
+
+    timescale:
+      in: query
+      name: timescale
+      description: Scale of time described by each amount
+      schema:
+        type: string
+        default: all
+        enum:
+          - day
+          - month
+          - year
+          - all
+
+    dateMin:
+      in: query
+      name: dateMin
+      description: Only return amounts after this date
+      schema:
+        type: string
+        format: date-time
+
+    dateMax:
+      in: query
+      name: dateMax
+      description: Only return amounts before this date
+      schema:
+        type: string
+        format: date-time
+
+    city:
+      in: query
+      name: city
+      description: Filter by city
+      schema:
+        type: string
+
+    region:
+      in: query
+      name: region
+      description: Filter by region
+      schema:
+        $ref: "core.yaml#/components/schemas/AddressRegion"
+
+    country:
+      in: query
+      name: country
+      description: Filter by country
+      schema:
+        type: string
+        format: ISO 3166-1 alpha-2 code
+
+    tagIds:
+      in: query
+      name: tagIds
+      description: Filter by tag IDs
+      schema:
+        type: array
+        items:
+          type: string
+
+    technologyIds:
+      in: query
+      name: technologyIds
+      description: Filter by technology IDs
+      schema:
+        type: array
+        items:
+          type: string
+
+    language:
+      in: query
+      name: language
+      description: Filter by language
+      schema:
+        type: string
+        format: ISO 639-1
+
+    languages:
+      in: query
+      name: languages
+      description: Filter by languages
+      schema:
+        type: array
+        items:
+          type: string
+          format: ISO 639-1
+
+    ageMin:
+      in: query
+      name: ageMin
+      description: Lower bound for user age filter
+      schema:
+        type: integer
+
+    ageMax:
+      in: query
+      name: ageMax
+      description: Upper bound for user age filter
+      schema:
+        type: integer
+
+    gender:
+      in: query
+      name: gender
+      description: Filter by user gender
+      schema:
+        $ref: "users.yaml#/components/schemas/Gender"
+
+    dojoId:
+      in: query
+      name: dojoId
+      description: Filter by dojo id
+      schema:
+        type: string
+
+    cancelled:
+      in: query
+      name: cancelled
+      description: Filter by cancelled
+      schema:
+        type: boolean
+
+    minAge:
+      in: query
+      name: minAge
+      description: Filter by minimum recommended age
+      schema:
+        type: integer
+
+    maxAge:
+      in: query
+      name: maxAge
+      description: Filter by maximum recommended age
+      schema:
+        type: integer
+
+    eventId:
+      in: query
+      name: eventId
+      description: Filter by event id
+      schema:
+        type: string
+
+    role:
+      in: query
+      name: role
+      description: Filter by ticket role
+      schema:
+        type: string
+        enum:
+         - ninja
+         - coach
+         - newCoach
+
+    sessionId:
+      in: query
+      name: sessionId
+      description: Filter by session id
+      schema:
+        type: string
+
+    userId:
+      in: query
+      name: userId
+      description: Filter by user id
+      schema:
+        type: string
+
+    ninjaTicketStatus:
+      in: query
+      name: status
+      description: Filter by ninja ticket status
+      schema:
+        type: string
+        enum:
+          - present
+          - absent
+          - registered
+          - queue
+          - cancelled
+
+    coachTicketStatus:
+      in: query
+      name: status
+      description: Filter by coach ticket status
+      schema:
+        type: string
+        enum:
+          - present
+          - absent
+          - waiting
+          - cancelled
+    archived:
+      in: query
+      name: archived
+      description: Filter by archived
+      schema:
+        type: boolean
+
+    subscribedDojoId:
+      in: query
+      name: subscribedDojoId
+      description: Filter by users subscribed to dojo
+      schema:
+        type: string
+
+    registratedDojoId:
+      in: query
+      name: registratedDojoId
+      description: Filter by users that participated in event/session of dojo
+      schema:
+        type: string

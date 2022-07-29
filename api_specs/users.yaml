@@ -1,0 +1,462 @@
+openapi: 3.0.0
+
+paths:
+  /users:
+    get:
+      x-roles: [admin, leads]
+      security:
+        - bearerAuth: []
+      tags:
+        - user
+      description: Gets a (filtered) list of users, can be ordered by name, city
+      summary: Gets a (filtered) list of users
+      operationId: getUsers
+      parameters:
+        - in: query
+          name: name
+          description: Filter by name
+          schema:
+            type: string
+        - in: query
+          name: zipCode
+          description: Filter by zip code
+          schema:
+            type: string
+        - $ref: 'reports.yaml#/components/parameters/city'
+        - $ref: 'reports.yaml#/components/parameters/region'
+        - $ref: 'reports.yaml#/components/parameters/country'
+        - $ref: 'reports.yaml#/components/parameters/language'
+        - $ref: 'reports.yaml#/components/parameters/ageMin'
+        - $ref: 'reports.yaml#/components/parameters/ageMax'
+        - $ref: 'reports.yaml#/components/parameters/gender'
+        - $ref: 'reports.yaml#/components/parameters/subscribedDojoId'
+        - $ref: 'reports.yaml#/components/parameters/registratedDojoId'
+        - $ref: 'core.yaml#/components/parameters/page'
+        - $ref: 'core.yaml#/components/parameters/size'
+        - $ref: 'core.yaml#/components/parameters/orderBy'
+        - $ref: 'core.yaml#/components/parameters/orderDir'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: 'users.yaml#/components/schemas/UserList'
+
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetUsersError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    post:
+      description: Creates a new user
+      summary: Creates a new user
+      operationId: createUser
+      tags:
+        - user
+      requestBody:
+        $ref: '#/components/requestBodies/PostUserBody'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+  /users/{id}:
+    get:
+      description: Gets a user by id
+        -[ninja role] can only see it's own account and account of children
+        -[lead role] can see everybody
+        -[admin] can see everyone
+      summary: Gets a user by id
+      operationId: getUser
+      security:
+        - bearerAuth: []
+      x-roles: [ninja, admin, lead]
+      tags:
+        - user
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    put:
+      security:
+        - bearerAuth: []
+      x-roles: [admin, ninja]
+      tags:
+        - user
+      description: Updates a user by id
+        -[ninja role] can edit own account and account of children, not globalRole
+        -[admin] can edit everyones account and globalRole
+      summary: Updates a user by id
+      operationId: updateUser
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      requestBody:
+        $ref: '#/components/requestBodies/PutUserBody'
+      responses:
+        '200':
+          description: User successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    patch:
+      x-roles: [admin, ninja]
+      security:
+        - bearerAuth: []
+      tags:
+        - user
+      description: Patches a user by id
+        -[ninja role] can patch own account and from children
+        -[admin role] can patch everyones account
+      summary: Patches a user by id
+      operationId: patchUser
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      requestBody:
+        $ref: 'core.yaml#/components/requestBodies/PatchBody'
+      responses:
+        '200':
+          description: User successfully patched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    delete:
+      description: Deletes a user by id
+        -[ninja role] can delete own account and from children
+        -[admin role] can delete everyones account
+      summary: Deletes a user by id
+      operationId: deleteUser
+      x-roles: [admin, ninja]
+      security:
+        - bearerAuth: []
+      tags:
+        - user
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '204':
+          description: User successfully deleted
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+components:
+  requestBodies:
+    PostUserBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NewUser'
+
+    PutUserBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/BasicUser'
+              - required:
+                - phoneNumber
+
+  schemas:
+    # Schemas for the /users route
+    BasicUser:
+      type: object
+      description: Model for basic fields of user
+      required:
+        - name
+        - dateOfBirth
+        - address
+        - language
+        - picturePermission
+      properties:
+        name:
+          type: string
+        gender:
+          $ref: '#/components/schemas/Gender'
+        dateOfBirth:
+          type: string
+          format: date
+        address:
+          $ref: 'core.yaml#/components/schemas/Address'
+        language:
+          type: string
+          format: ISO 639-1
+        phoneNumber:
+          type: string
+        globalRoles:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlobalRole'
+        picturePermission:
+          type: boolean
+          description: |
+            Whether this user has given permission to have pictures taken
+            during events.
+        specialInfo:
+          type: string
+          description: |
+            Information that coaches should know about during events this user
+            participates in
+
+    NewUser:
+      allOf:
+        - $ref: '#/components/schemas/BasicUser'
+        - type: object
+          required:
+            - email
+            - phoneNumber
+          properties:
+            email:
+              type: string
+   
+    User:
+      allOf:
+        - $ref: "#/components/schemas/NewUser"
+        - type: object
+          required:
+            - id
+            - registrationDate
+            - _links
+            - phoneNumber
+          properties:
+            id:
+              type: string
+            registrationDate:
+              type: string
+              format: date
+            archived:
+              type: boolean
+              description: This needs to be in the get if an admin gets the (archived) user,
+                otherwise a 404 should be thrown if there is a GET on an archived user.
+                Recovering an archived user is done with a PATCH.
+            _links:
+              type: object
+              required:
+                - self
+              properties:
+                self:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                put:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                patch:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                delete:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                children:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                detachChild:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                createChild:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                users:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+            _templates:
+              type: object
+              properties:
+                put:
+                  $ref: 'core.yaml#/components/schemas/FormTemplate'
+                patch:
+                  $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    Gender:
+      type: string
+      enum:
+        - m
+        - f
+        - o
+
+    UserList:
+      description: Model for a list of users
+      type: object
+      required:
+        - _embedded
+        - _links
+      properties:
+        _embedded:
+          type: object
+          required:
+            - users
+          properties:
+            users:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+            count:
+                $ref: 'core.yaml#/components/schemas/Count'
+        _links:
+          type: object
+          required:
+            - self
+          properties:
+            self:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            post:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            root:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            next:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            prev:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            first:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            last:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            verify:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            resetPassword:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            login:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            refresh:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+        _templates:
+          type: object
+          properties:
+            post:
+              $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    # Error schemas for the /users route
+
+    GetUsersError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - description: Error that specifies what was wrong in the query parameters
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                name:
+                  type: string
+                zipCode:
+                  type: string
+                city:
+                  type: string
+                country:
+                  type: string
+                language:
+                  type: string
+                ageMin:
+                  type: string
+                ageMax:
+                  type: string
+                gender:
+                  type: string
+                subscribedDojoId:
+                  type: string
+                registratedDojoId:
+                  type: string
+                page:
+                  type: string
+                size:
+                  type: string
+                orderBy:
+                  type: string
+                orderDir:
+                  type: string
+
+    GlobalRole:
+      description: a role a user can have everywhere
+      type: string
+      enum:
+        - admin
+
+    UserError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - description: Error that specifies how the fields should be filled when filled in the wrong manner
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                name:
+                  type: string
+                gender:
+                  type: string
+                dateOfBirth:
+                  type: string
+                address.streetWithNumber:
+                  type: string
+                address.city:
+                  type: string
+                address.zipCode:
+                  type: string
+                address.region:
+                  type: string
+                address.country:
+                  type: string
+                language:
+                  type: string
+                phoneNumber:
+                  type: string
+                globalRoles:
+                  type: string
+                picturePermission:
+                  type: string
+                specialInfo:
+                  type: string
+                email:
+                  type: string

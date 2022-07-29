@@ -1,0 +1,276 @@
+components:
+  requestBodies:
+    PatchBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PatchRequest'
+
+  schemas:
+    # General schemas
+    Count:
+      description: Total amount of items
+      type: integer
+
+    AddressRegion:
+      description: >
+        Address region. Values: Flanders, Wallonia, Brussels
+      type: string
+      enum:
+        - Flanders
+        - Wallonia
+        - Brussels
+
+    Address:
+      description: Model for an address
+      type: object
+      properties:
+        streetWithNumber:
+          type: string
+          description: String with street name and house number combined
+        city:
+          type: string
+        zipCode:
+          type: string
+        region:
+          $ref: '#/components/schemas/AddressRegion'
+        country:
+          type: string
+          format: ISO 3166-1 alpha-2 code
+      required:
+        - country
+        - zipCode
+        - region
+
+    PatchRequest:
+      description: Array of patches
+      type: array
+      items:
+        $ref: '#/components/schemas/PatchDocument'
+
+    PatchDocument:
+      description: A JSONPatch document as defined by RFC 6902
+      required:
+        - op
+        - path
+      properties:
+        op:
+          type: string
+          description: The operation to be performed
+          enum:
+            - add
+            - remove
+            - replace
+            - move
+            - copy
+            - test
+        path:
+          type: string
+          description: A JSON-Pointer to the field to perform the operation to
+        value:
+          type: object
+          description: The value to be used within the operations.
+        from:
+          type: string
+          description: A string containing a JSON Pointer value. (needed for copy, move, ...)
+
+    Visible:
+      description: Minimum role to see this
+      type: string
+      nullable: true
+      enum:
+        - public
+        - coach
+        - leader
+        - admin
+
+    LinkObject:
+      description: 'HAL link object as specificied in the following Internet Draft: https://tools.ietf.org/html/draft-kelly-json-hal-08#section-5'
+      type: object
+      required:
+        - href
+      properties:
+        href:
+          type: string
+        templated:
+          type: boolean
+        type:
+          type: string
+        deprecation:
+          type: string
+        name:
+          type: string
+        profile:
+          type: string
+        title:
+          type: string
+        hreflang:
+          type: string
+
+    FormTemplate:
+      description: Template of a form
+      type: object
+      required:
+        - properties
+      properties:
+        title:
+          type: string
+        method:
+          type: string
+          enum:
+            - POST
+            - PUT
+            - PATCH
+        contentType:
+          type: string
+        properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/FormProperty'
+
+    FormProperty:
+      description: property for in a template of a form
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        required:
+          type: boolean
+        prompt:
+          type: string
+          description: how does this need to prompt in frontend
+
+    # General error schemas
+
+    Error:
+      description: This message should specify what caused the error
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    # Schemas for the / route
+
+    Root:
+      type: object
+      required:
+        - _links
+      properties:
+        _links:
+          type: object
+          required:
+            - users
+            - dojos
+            - events
+            - sessions
+            - technologies
+            - tags
+            - reports
+            - tickets
+            - coachApplications
+            - dojoSubscriptions
+            - dojoRoles
+          properties:
+            users:
+              $ref: '#/components/schemas/LinkObject'
+            dojos:
+              $ref: '#/components/schemas/LinkObject'
+            events:
+              $ref: '#/components/schemas/LinkObject'
+            sessions:
+              $ref: '#/components/schemas/LinkObject'
+            technologies:
+              $ref: '#/components/schemas/LinkObject'
+            tags:
+              $ref: '#/components/schemas/LinkObject'
+            reports:
+              $ref: '#/components/schemas/LinkObject'
+            tickets:
+              $ref: '#/components/schemas/LinkObject'
+            coachApplications:
+              $ref: '#/components/schemas/LinkObject'
+            dojoSubscriptions:
+              $ref: '#/components/schemas/LinkObject'
+            dojoRoles:
+              $ref: '#/components/schemas/LinkObject'
+
+  parameters:
+    page:
+      name: page
+      in: query
+      description: Page number you want
+      schema:
+        type: integer
+        format: int32
+        default: 0
+
+    size:
+      name: size
+      in: query
+      description: Amount of items per page
+      schema:
+        type: integer
+        format: int32
+        default: 20
+
+    pathId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+
+    orderBy:
+      name: orderBy
+      in: query
+      description: Fields to order by
+      schema:
+        type: array
+        items:
+          type: string
+        minItems: 1
+      explode: true
+
+    orderDir:
+      name: orderDir
+      in: query
+      description: Order direction
+      schema:
+        type: string
+        enum:
+          - ASC
+          - DESC
+        default: ASC
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    UnauthorizedError:
+      description: User is unauthorised
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    DefaultError:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFoundError:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,0 +1,676 @@
+openapi: 3.0.0
+
+paths:
+  /tickets:
+    get:
+      tags:
+        - ticket
+      description: Ticket links
+      summary: Ticket links
+      operationId: getTickets
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/TicketRoot"
+        default:
+          $ref: "core.yaml#/components/responses/DefaultError"
+
+  /tickets/ninja:
+    get:
+      tags:
+        - ticket
+      description: >
+        Get all ninja tickets matching the given filters. Users can view their own tickets (and their children's),
+        and leads of a dojo can see all tickets of that dojo.
+      summary: Get all ninja tickets matching the given filters
+      operationId: getNinjaTickets
+      parameters:
+        - in: query
+          name: userId
+          description: Filter by user ID
+          schema:
+            type: string
+        - in: query
+          name: sessionId
+          description: Filter by session ID
+          schema:
+            type: string
+        - in: query
+          name: needsLaptop
+          description: Filter by needs laptop
+          schema:
+            type: boolean
+        - in: query
+          name: status
+          description: Filter by ticket status
+          schema:
+            $ref: "#/components/schemas/NinjaTicketStatus"
+        - $ref: "core.yaml#/components/parameters/page"
+        - $ref: "core.yaml#/components/parameters/size"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/NinjaTicketList"
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetNinjaTicketsError"
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: "core.yaml#/components/responses/DefaultError"
+
+    post:
+      tags:
+        - ticket
+      description: Create a ninja ticket. Users can only create tickets for themselves or their children.
+      summary: Create a ninja ticket
+      operationId: createNinjaTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewNinjaTicket'
+      responses:
+        '201':
+          description: Ticket created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/NinjaTicket"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostNinjaTicketError"
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        default:
+          $ref: "core.yaml#/components/responses/DefaultError"
+
+  /tickets/coach:
+    get:
+      tags:
+        - ticket
+      description: >
+        Get all coach tickets matching the given filters. Users can view their own tickets,
+        and leads of a dojo can see all tickets of that dojo.
+      summary: Get all coach tickets matching the given filters
+      operationId: getCoachTickets
+      parameters:
+        - in: query
+          name: userId
+          description: Filter by user ID
+          schema:
+            type: string
+        - in: query
+          name: eventId
+          description: Filter by event ID
+          schema:
+            type: string
+        - in: query
+          name: status
+          description: Filter by ticket status
+          schema:
+            $ref: "#/components/schemas/CoachTicketStatus"
+        - $ref: "core.yaml#/components/parameters/page"
+        - $ref: "core.yaml#/components/parameters/size"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CoachTicketList"
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetCoachTicketsError"
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: "core.yaml#/components/responses/DefaultError"
+
+    post:
+      tags:
+        - ticket
+      description: Create a coach ticket. Users can only create tickets for themselves.
+      summary: Create a coach ticket
+      operationId: createCoachTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewCoachTicket"
+      responses:
+        '201':
+          description: Ticket created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CoachTicket"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostCoachTicketError"
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        default:
+          $ref: "core.yaml#/components/responses/DefaultError"
+
+  /tickets/ninja/{id}:
+    get:
+      tags:
+        - ticket
+      description: >
+        Get a ninja ticket by ID. Users can view their own tickets (and their children's), and leads of a dojo can
+        see all tickets of that dojo.
+      summary: Get a ninja ticket by ID
+      operationId: getNinjaTicket
+      parameters:
+        - $ref: "core.yaml#/components/parameters/pathId"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/NinjaTicket"
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: "core.yaml#/components/responses/DefaultError"
+
+    patch:
+      tags:
+        - ticket
+      description: |
+        Change certain values of a coach ticket. Ticket owner can set cancelled status and needsLaptop, leads and
+        coaches of this ticket's dojo can set present and not-present status.
+      summary: Change ninja ticket
+      operationId: patchNinjaTicket
+      parameters:
+        - $ref: "core.yaml#/components/parameters/pathId"
+      requestBody:
+        $ref: "core.yaml#/components/requestBodies/PatchBody"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/NinjaTicket"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatchNinjaTicketError"
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: "core.yaml#/components/responses/DefaultError"
+    
+    delete:
+      tags:
+        - ticket
+      description: Delete a ninja ticket
+      summary: Delete a ninja ticket
+      operationId: deleteNinjaTicket
+      x-roles: [admin, lead]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "core.yaml#/components/parameters/pathId"
+      responses:
+        '204':
+          description: Ninja ticket successfully deleted
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /tickets/coach/{id}:
+    get:
+      tags:
+        - ticket
+      description: >
+        Get a coach ticket by ID. Users can view their own tickets, and leads of a dojo can
+        see all tickets of that dojo.
+      summary: Get a coach ticket by ID
+      operationId: getCoachTicket
+      parameters:
+        - $ref: "core.yaml#/components/parameters/pathId"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CoachTicket"
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: "core.yaml#/components/responses/DefaultError"
+
+    patch:
+      tags:
+        - ticket
+      description: |
+        Change status of a coach ticket. Ticket owner can set cancelled status, leads of this ticket's dojo
+        can set present and not-present status.
+      summary: Change coach ticket
+      operationId: patchCoachTicket
+      parameters:
+        - $ref: "core.yaml#/components/parameters/pathId"
+      requestBody:
+          $ref: "core.yaml#/components/requestBodies/PatchBody"
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CoachTicket"
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatchCoachTicketError"
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: "core.yaml#/components/responses/DefaultError"
+
+    delete:
+      tags:
+        - ticket
+      description: Delete a coach ticket
+      summary: Delete a coach ticket
+      operationId: deleteCoachTicket
+      x-roles: [admin, lead]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "core.yaml#/components/parameters/pathId"
+      responses:
+        '204':
+          description: Coach ticket successfully deleted
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+components:
+  schemas:
+    TicketRoot:
+      type: object
+      description: Ticket root links
+      properties:
+        _links:
+          type: object
+          properties:
+            self:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            ninjaTickets:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            coachTickets:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            root:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+      required:
+        - _links
+
+    BasicNinjaTicket:
+      type: object
+      required:
+        - needsLaptop
+      properties:
+        needsLaptop:
+          type: boolean
+          description: Does the user need a laptop at the event.
+
+    NewNinjaTicket:
+      allOf:
+        - $ref: "#/components/schemas/NewSharedTicket"
+        - $ref: "#/components/schemas/BasicNinjaTicket"
+        - type: object
+          description: Ticket for a ninja for a session
+          required:
+            - sessionId
+          properties:
+            sessionId:
+              type: string
+              description: ID of the session this ticket is for
+
+    NinjaTicket:
+      allOf:
+        - $ref: "#/components/schemas/SharedTicket"
+        - $ref: "#/components/schemas/BasicNinjaTicket"
+        - type: object
+          description: Ticket for a ninja for a session
+          required:
+            - needsLaptop
+            - status
+            - _links
+          properties:
+            status:
+              $ref: "#/components/schemas/NinjaTicketStatus"
+            _links:
+              type: object
+              required:
+                - self
+                - session
+              properties:
+                self:
+                  $ref: "core.yaml#/components/schemas/LinkObject"
+                session:
+                  $ref: "core.yaml#/components/schemas/LinkObject"
+
+    NewCoachTicket:
+      allOf:
+        - $ref: "#/components/schemas/NewSharedTicket"
+        - type: object
+          description: Ticket for a ninja for a session
+          required:
+            - eventId
+          properties:
+            eventId:
+              type: string
+              description: ID of the event this ticket is for
+
+    CoachTicket:
+      allOf:
+        - $ref: "#/components/schemas/SharedTicket"
+        - type: object
+          required:
+            - status
+            - _links
+          description: Ticket for a coach for an event. The user must be a coach or lead in this ticket's dojo
+          properties:
+            status:
+              $ref: "#/components/schemas/CoachTicketStatus"
+            _links:
+              type: object
+              required:
+                - self
+                - event
+              properties:
+                self:
+                  $ref: "core.yaml#/components/schemas/LinkObject"
+                event:
+                  $ref: "core.yaml#/components/schemas/LinkObject"          
+
+    NewSharedTicket:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          description: ID of the user this ticket is for
+
+    SharedTicket:
+      type: object
+      required:
+        - id
+        - registrationTime
+        - _links
+      properties:
+        id:
+          type: string
+          description: Ticket ID
+        registrationTime:
+          type: string
+          format: date-time
+          description: Timestamp of when this ticket was submitted
+        archived:
+          type: boolean
+          description: Whether this ticket is archived or not
+        _links:
+          type: object
+          required:
+            - self
+            - tickets
+          properties:
+            self:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            user:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            patch:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+            tickets:
+              $ref: "core.yaml#/components/schemas/LinkObject"
+        _templates:
+          type: object
+          properties:
+            patch:
+              $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    NinjaTicketStatus:
+      type: string
+      description: |
+        The status of this ticket. (only for ninja tickets)
+        * Present: The ninja was present at this session
+        * Absent: The ninja was not present at this session
+        * Registered (waiting): The ninja is registered for an upcoming session
+        * Queue (waiting): The ninja is waiting in the queue for an upcoming session
+        * Cancelled: The ninja has cancelled their ticket
+      enum:
+        - present
+        - absent
+        - registered
+        - queue
+        - cancelled
+
+    CoachTicketStatus:
+      type: string
+      description: |
+        The status of this ticket. (only for coach tickets)
+        * Present: The coach was present at this event
+        * Absent: The coach was not present at this event
+        * Waiting: The coach is registered for an upcoming event
+        * Cancelled: The coach has cancelled their ticket
+      enum:
+        - present
+        - absent
+        - waiting
+        - cancelled
+
+    NinjaTicketList:
+      description: Model for a list of ninja tickets
+      type: object
+      required:
+        - _embedded
+        - _links
+      properties:
+        _embedded:
+          type: object
+          required:
+            - tickets
+          properties:
+            tickets:
+              type: array
+              items:
+                $ref: "#/components/schemas/NinjaTicket"
+            count:
+                $ref: 'core.yaml#/components/schemas/Count'
+        _links:
+          $ref: "#/components/schemas/TicketListLinks"
+        _templates:
+          type: object
+          properties:
+            patch:
+              $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    CoachTicketList:
+      description: Model for a list of coach tickets
+      type: object
+      required:
+        - _embedded
+        - _links
+      properties:
+        _embedded:
+          type: object
+          required:
+            - tickets
+          properties:
+            tickets:
+              type: array
+              items:
+                $ref: "#/components/schemas/CoachTicket"
+            count:
+                $ref: 'core.yaml#/components/schemas/Count'
+        _links:
+          $ref: "#/components/schemas/TicketListLinks"
+        _templates:
+          type: object
+          properties:
+            post:
+              $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    TicketListLinks:
+      type: object
+      required:
+        - self
+      properties:
+        self:
+          $ref: 'core.yaml#/components/schemas/LinkObject'
+        post:
+          $ref: 'core.yaml#/components/schemas/LinkObject'
+        root:
+          $ref: 'core.yaml#/components/schemas/LinkObject'
+        next:
+          $ref: 'core.yaml#/components/schemas/LinkObject'
+        prev:
+          $ref: 'core.yaml#/components/schemas/LinkObject'
+        first:
+          $ref: 'core.yaml#/components/schemas/LinkObject'
+        last:
+          $ref: 'core.yaml#/components/schemas/LinkObject'
+
+    PatchNinjaTicketError:
+      allOf:
+        - $ref: "core.yaml#/components/schemas/Error"
+        - type: object
+          description: Patch request error values
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                status:
+                  type: string
+                needsLaptop:
+                  type: string
+
+    PatchCoachTicketError:
+      allOf:
+        - $ref: "core.yaml#/components/schemas/Error"
+        - type: object
+          description: Patch request error values
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                status:
+                  type: string
+
+    GetNinjaTicketsError:
+      allOf:
+        - $ref: "core.yaml#/components/schemas/Error"
+        - type: object
+          description: Specifies what was wrong with the query pameters
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                userId:
+                  type: string
+                sessionId:
+                  type: string
+                needsLaptop:
+                  type: string
+                status:
+                  type: string
+                page:
+                  type: string
+                size:
+                  type: string
+
+    GetCoachTicketsError:
+      allOf:
+        - $ref: "core.yaml#/components/schemas/Error"
+        - type: object
+          description: Specifies what was wrong with the query pameters
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                userId:
+                  type: string
+                eventId:
+                  type: string
+                status:
+                  type: string
+                page:
+                  type: string
+                size:
+                  type: string
+
+    PostNinjaTicketError:
+      allOf:
+        - $ref: "core.yaml#/components/schemas/Error"
+        - type: object
+          description: Specifies what was wrong with the body parameters submitting a ticket
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                needsLaptop:
+                  type: string
+                userId:
+                  type: string
+
+    PostCoachTicketError:
+      allOf:
+        - $ref: "core.yaml#/components/schemas/Error"
+        - type: object
+          description: Post request error values
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                eventId:
+                  type: string
+                userId:
+                  type: string

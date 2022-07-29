@@ -1,0 +1,196 @@
+openapi: 3.0.0
+
+info:
+  title: Coderdojo specification
+  description: OpenAPI specification for the SEL2 Coderdojo project
+  version: 1.1.3
+  contact:
+    name: Github Repository
+    url: https://github.ugent.be/SoftwareEngineeringLab2/2019-2020-rest-api/
+
+servers:
+  - description: UGent Test server group 1
+    url: 'https://sel2-1.ugent.be'
+  - description: UGent Test server group 2
+    url: 'https://sel2-2.ugent.be'
+  - description: UGent Test server group 3
+    url: 'https://sel2-3.ugent.be'
+  - description: UGent Test server group 4
+    url: 'https://sel2-4.ugent.be'
+  - description: UGent Test server group 5
+    url: 'https://sel2-5.ugent.be'
+
+tags:
+  - name: user
+    description: Operations on users
+  - name: dojo
+    description: Operations on dojos
+  - name: event
+    description: Operations on events
+  - name: session
+    description: Operations on sessions
+  - name: ticket
+    description: Operations on tickets
+  - name: report
+    description: Operations on reports
+  - name: application
+    description: Operations on coach applications for dojos
+  - name: tag
+    description: Operations on tags
+  - name: technology
+    description: Operations on technologies
+  - name: dojo-role
+    description: Operations on dojo roles
+
+paths:
+  # Root
+
+  /:
+    get:
+      description: Gets the root
+      summary: Gets the root
+      operationId: getRoot
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: 'core.yaml#/components/schemas/Root'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  # Users
+
+  /users:
+    $ref: "users.yaml#/paths/~1users"
+
+  /users/{id}:
+    $ref: "users.yaml#/paths/~1users~1{id}"
+
+  /users/{id}/children:
+    $ref: "children.yaml#/paths/~1users~1{id}~1children"
+
+  # Dojos
+
+  /dojos:
+    $ref: "dojos.yaml#/paths/~1dojos"
+
+  /dojos/{id}:
+    $ref: "dojos.yaml#/paths/~1dojos~1{id}"
+
+  # Events
+
+  /events:
+    $ref: "events.yaml#/paths/~1events"
+
+  /events/{id}:
+    $ref: "events.yaml#/paths/~1events~1{id}"
+
+  # Sessions
+
+  /sessions:
+    $ref: "sessions.yaml#/paths/~1sessions"
+
+  /sessions/{id}:
+    $ref: "sessions.yaml#/paths/~1sessions~1{id}"
+
+  # Technologies
+
+  /technologies:
+    $ref: "technologies.yaml#/paths/~1technologies"
+
+  /technologies/{id}:
+    $ref: "technologies.yaml#/paths/~1technologies~1{id}"
+
+
+  # Tickets
+
+  /tickets:
+    $ref: "tickets.yaml#/paths/~1tickets"
+
+  /tickets/ninja:
+    $ref: "tickets.yaml#/paths/~1tickets~1ninja"
+
+  /tickets/ninja/{id}:
+    $ref: "tickets.yaml#/paths/~1tickets~1ninja~1{id}"
+
+  /tickets/coach:
+    $ref: "tickets.yaml#/paths/~1tickets~1coach"
+
+  /tickets/coach/{id}:
+    $ref: "tickets.yaml#/paths/~1tickets~1coach~1{id}"
+
+  # Applications
+
+  /coach-applications:
+    $ref: "coach-applications.yaml#/paths/~1coach-applications"
+
+  /coach-applications/{id}:
+    $ref: "coach-applications.yaml#/paths/~1coach-applications~1{id}"
+
+  # Tags
+
+  /tags:
+    $ref: "tags.yaml#/paths/~1tags"
+
+  /tags/{id}:
+    $ref: "tags.yaml#/paths/~1tags~1{id}"
+
+  # Authentication
+
+  /users/login:
+    $ref: "authentication.yaml#/paths/~1users~1login"
+
+  /users/refresh:
+    $ref: "authentication.yaml#/paths/~1users~1refresh"
+
+  /users/verify:
+    $ref: "authentication.yaml#/paths/~1users~1verify"
+
+  /users/reset-password:
+    $ref: "authentication.yaml#/paths/~1users~1reset-password"
+
+  # Reports
+  /reports:
+    $ref: "reports.yaml#/paths/~1reports"
+
+  /reports/dojos:
+    $ref: "reports.yaml#/paths/~1reports~1dojos"
+
+  /reports/users:
+    $ref: "reports.yaml#/paths/~1reports~1users"
+
+  /reports/events:
+    $ref: "reports.yaml#/paths/~1reports~1events"
+
+  /reports/event-participations:
+    $ref: "reports.yaml#/paths/~1reports~1event-participations"
+
+  /reports/sessions:
+    $ref: "reports.yaml#/paths/~1reports~1sessions"
+
+  /reports/tickets:
+    $ref: "reports.yaml#/paths/~1reports~1tickets"
+
+  /reports/tickets/ninja:
+    $ref: "reports.yaml#/paths/~1reports~1tickets~1ninja"
+
+  /reports/tickets/coach:
+    $ref: "reports.yaml#/paths/~1reports~1tickets~1coach"
+
+  # Subscriptions
+
+  /dojo-subscriptions:
+    $ref: "subscriptions.yaml#/paths/~1dojo-subscriptions"
+
+  /dojo-subscriptions/{id}:
+    $ref: "subscriptions.yaml#/paths/~1dojo-subscriptions~1{id}"
+
+  # Dojo roles
+
+  /dojo-roles:
+    $ref: "dojo-roles.yaml#/paths/~1dojo-roles"
+
+  /dojo-roles/{id}:
+    $ref: "dojo-roles.yaml#/paths/~1dojo-roles~1{id}"

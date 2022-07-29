@@ -1,0 +1,404 @@
+openapi: 3.0.0
+
+paths:
+  /events:
+    get:
+      tags:
+        - event
+      description: Gets a (filtered) list of events, can be ordered by startTime, name
+      summary: Gets a (filtered) list of events
+      security:
+        - bearerAuth: []
+      operationId: getEvents
+      parameters:
+        - in: query
+          name: name
+          description: Filter by name
+          schema:
+            type: string
+        - $ref: 'reports.yaml#/components/parameters/dojoId'
+        - $ref: 'reports.yaml#/components/parameters/dateMin'
+        - $ref: 'reports.yaml#/components/parameters/dateMax'
+        - $ref: 'reports.yaml#/components/parameters/cancelled'
+        - $ref: 'reports.yaml#/components/parameters/region'
+        - $ref: 'reports.yaml#/components/parameters/technologyIds'
+        - $ref: 'core.yaml#/components/parameters/page'
+        - $ref: 'core.yaml#/components/parameters/size'
+        - $ref: 'core.yaml#/components/parameters/orderBy'
+        - $ref: 'core.yaml#/components/parameters/orderDir'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/EventList'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEventsError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    post:
+      description:
+        Creates a new event for a dojo.
+        Leads are only allowed to add events for their dojos
+      summary: Creates a new event for a dojo
+      security:
+        - bearerAuth: []
+      x-roles: [admin, lead]
+      operationId: createEvent
+      tags:
+        - event
+      requestBody:
+        $ref: '#/components/requestBodies/PostEventBody'
+      responses:
+        '201':
+          description: Event successfully created
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /events/{id}:
+    get:
+      tags:
+        - event
+      description: Gets an event by id
+      summary: Gets an event by id
+      security:
+        - bearerAuth: []
+      operationId: getEvent
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    put:
+      description:
+        Updates an event by id. Leads are only allowed to update events of his/her dojo
+      summary: Updates an event by id
+      security:
+        - bearerAuth: []
+      x-roles: [admin, lead]
+      tags:
+        - event
+      operationId: updateEvent
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      requestBody:
+        $ref: '#/components/requestBodies/PutEventBody'
+      responses:
+        '200':
+          description: Event successfully updated
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    patch:
+      description:
+        Patches an event by id. Leads are only allowed to update events of his/her dojo
+      summary: Patches an event by id
+      security:
+        - bearerAuth: []
+      x-roles: [admin, lead]
+      tags:
+        - event
+      operationId: patchEvent
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      requestBody:
+        $ref: 'core.yaml#/components/requestBodies/PatchBody'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    delete:
+      description: Deletes an event by id. Leads are only allowed to update events of his/her dojo
+      summary: Deletes an event by id
+      security:
+        - bearerAuth: []
+      x-roles: [admin, lead]
+      tags:
+        - event
+      operationId: deleteEvent
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '204':
+          description: Event successfully deleted
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+components:
+  requestBodies:
+    PostEventBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NewEvent'
+
+    PutEventBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BasicEvent'
+
+  schemas:
+    # Schemas for the /events route
+
+    BasicEvent:
+      description: Model for a basic event
+      type: object
+      required:
+        - name
+        - description
+        - startTime
+        - endTime
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+          description: Date and time when the event starts
+        endTime:
+          type: string
+          format: date-time
+          description: Date and time when the event ends
+        visible:
+          $ref: 'core.yaml#/components/schemas/Visible'
+        cancelled:
+          type: boolean
+          description: Says whether event is cancelled
+        laptopAmount:
+          type: integer
+          description: Amount of laptops still available for this event
+
+    NewEvent:
+      allOf:
+        - $ref: "#/components/schemas/BasicEvent"
+        - type: object
+          description: Model for new event
+          required:
+            - dojoId
+          properties:
+            dojoId:
+              type: string
+    
+    Event:
+      allOf:
+        - $ref: "#/components/schemas/BasicEvent"
+        - type: object
+          description: Model for event response
+          required:
+            - id
+            - _links
+          properties:
+            id:
+              type: string
+            archived:
+              type: boolean
+              description:
+                Whether this event is archived or not. An archived event
+                can be recovered with a PATCH.
+            _links:
+              type: object
+              required:
+                - self
+              properties:
+                self:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                put:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                patch:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                delete:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                dojo:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                events:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                sessions:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                sessionPost:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                coachTickets:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                coachTicketPost:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                ninjaTickets:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+            _templates:
+              type: object
+              properties:
+                put:
+                  $ref: 'core.yaml#/components/schemas/FormTemplate'
+                patch:
+                  $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    EventList:
+      description: Model for a list of events
+      type: object
+      required:
+        - _embedded
+        - _links
+      properties:
+        _embedded:
+          type: object
+          required:
+            - events
+          properties:
+            events:
+              type: array
+              items:
+                $ref: '#/components/schemas/Event'
+            count:
+                $ref: 'core.yaml#/components/schemas/Count'
+        _links:
+          type: object
+          required:
+            - self
+          properties:
+            self:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            post:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            root:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            next:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            prev:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            first:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            last:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+        _templates:
+          type: object
+          properties:
+            post:
+              $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    # Error schemas for the /events route
+
+    GetEventsError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - description: Error that specifies what was wrong in the query parameters
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                name:
+                  type: string
+                dojoId:
+                  type: string
+                dateMin:
+                  type: string
+                dateMax:
+                  type: string
+                cancelled:
+                  type: string
+                region:
+                  type: string
+                technologyIds:
+                  type: string
+                page:
+                  type: string
+                size:
+                  type: string
+                orderBy:
+                  type: string
+                orderDir:
+                  type: string
+
+    EventError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - description: Error that can specify how the fields should be filled when filled in the wrong manner
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                startTime:
+                  type: string
+                endTime:
+                  type: string
+                visible:
+                  type: string
+                cancelled:
+                  type: string
+                laptopAmount:
+                  type: string
+                dojoId:
+                  type: string

@@ -1,0 +1,253 @@
+openapi: 3.0.0
+
+paths:
+  /users/login:
+    post:
+      tags:
+        - user
+        - authentication
+      description: Log in a user
+      summary: Log in a user
+      operationId: loginUser
+      requestBody:
+        $ref: '#/components/requestBodies/LoginBody'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Login'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostLoginError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /users/refresh:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - user
+        - authentication
+      description:
+        Refresh user's login session.
+        BearerAuth passes the refreshtoken.
+      summary: Refresh user's login session
+      operationId: refreshUser
+      requestBody:
+        $ref: '#/components/requestBodies/RefreshBody'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Refresh'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostRefreshError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /users/verify:
+    post:
+      tags:
+        - user
+        - authentication
+      description: Verify user email and/or set user password
+      summary: Verify user email and/or set user password
+      operationId: verifyUser
+      requestBody:
+        $ref: '#/components/requestBodies/VerifyBody'
+      responses:
+        '204':
+          description: Successful operation
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostVerifyError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /users/reset-password:
+    post:
+      tags:
+        - user
+        - authentication
+      description: send password reset request email
+      summary: send password reset request email
+      operationId: resetUserPassword
+      requestBody:
+        $ref: '#/components/requestBodies/ResetPasswordBody'
+      responses:
+        '204':
+          description: Successful operation
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResetError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+components:
+  requestBodies:
+    ResetPasswordBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                format: email
+            required:
+              - email
+
+    RefreshBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              webToken:
+                type: string
+            required:
+              - webToken
+
+    VerifyBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+              password:
+                type: string
+            required:
+              - token
+              - password
+
+    LoginBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+            required:
+              - email
+              - password
+
+  schemas:
+    # Schemas for the authentication routes
+    Refresh:
+      type: object
+      required:
+        - webToken
+        - expiration
+        - _links
+      properties:
+        webToken:
+          type: string
+          format: JSON Web token
+        refreshToken:
+          type: string
+          format: Refresh token
+        expiration:
+          type: string
+          format: date-time
+        _links:
+          type: object
+          required:
+            - self
+            - user
+          properties:
+            self:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            user:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            root:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+
+    Login:
+      description: Response that contains session tokens
+      allOf:
+        - type: object
+          required:
+            - refreshToken
+        - $ref: '#/components/schemas/Refresh'
+
+    PostLoginError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - description: Error that can specify how the fields should be filled when filled in the wrong manner
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+
+    PostRefreshError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - description: Error that can specify how the fields should be filled when filled in the wrong manner
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                webToken:
+                  type: string
+
+    PostVerifyError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - description: Error that can specify how the fields should be filled when filled in the wrong manner
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+
+    PostResetError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - description: Error that can specify how the fields should be filled when filled in the wrong manner
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                email:
+                  type: string

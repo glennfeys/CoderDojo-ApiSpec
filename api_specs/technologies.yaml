@@ -1,0 +1,242 @@
+openapi: 3.0.0
+
+paths:
+  /technologies:
+    get:
+      tags:
+        - technology
+      description: Gets a list of technologies. Can be ordered by name.
+      summary: Gets a list of technologies
+      operationId: getTechnologies
+      parameters:
+        - in: query
+          name: name
+          description: Filter by name
+          schema:
+            type: string
+        - $ref: 'core.yaml#/components/parameters/orderDir'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/TechnologyList'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetTechnologiesError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    post:
+      x-roles: [admin, lead]
+      security:
+        - bearerAuth: []
+      tags:
+        - technology
+      description: Creates a new technology.
+      summary: Creates a new technology
+      operationId: createTechnology
+      requestBody:
+        $ref: '#/components/requestBodies/TechnologyBody'
+      responses:
+        '201':
+          description: Technology created
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Technology'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TechnologyError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /technologies/{id}:
+    get:
+      tags:
+        - technology
+      description: Gets a technology by id.
+      summary: Gets a technology by id
+      operationId: getTechnology
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Technology'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    put:
+      x-roles: [admin, lead]
+      security:
+        - bearerAuth: []
+      tags:
+        - technology
+      description: Updates a technology by id.
+      summary: Updates a technology by id
+      operationId: updateTechnology
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      requestBody:
+        $ref: '#/components/requestBodies/TechnologyBody'
+      responses:
+        '200':
+          description: Technology successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Technology'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TechnologyError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    delete:
+      x-roles: [admin, lead]
+      security:
+        - bearerAuth: []
+      tags:
+        - technology
+      description: Deletes a technology by id.
+      summary: Deletes a technology by id
+      operationId: deleteTechnology
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '204':
+          description: Technology successfully deleted
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+components:
+  requestBodies:
+    TechnologyBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NewTechnology'
+
+  schemas:
+    NewTechnology:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+
+    Technology:
+      allOf:
+        - $ref: "#/components/schemas/NewTechnology"
+        - type: object
+          required:
+            - id
+            - _links
+          properties:
+            id:
+              type: string
+            _links:
+              type: object
+              required:
+                - self
+              properties:
+                self:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                put:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                delete:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                technologies:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+            _templates:
+              type: object
+              properties:
+                put:
+                  $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    TechnologyList:
+      description: Model for a list of technologies
+      type: object
+      required:
+        - _embedded
+        - _links
+      properties:
+        _embedded:
+          type: object
+          required:
+            - technologies
+          properties:
+            technologies:
+              type: array
+              items:
+                $ref: '#/components/schemas/Technology'
+            count:
+                $ref: 'core.yaml#/components/schemas/Count'
+        _links:
+          type: object
+          required:
+            - self
+          properties:
+            self:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            post:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            root:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+        _templates:
+          type: object
+          properties:
+            post:
+              $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    TechnologyError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - type: object
+          properties:
+            fielderrors:
+              type: object
+              properties:
+                name:
+                  type: string
+
+    GetTechnologiesError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - type: object
+          properties:
+            fielderrors:
+              type: object
+              properties:
+                name:
+                  type: string
+                orderDir:
+                  type: string

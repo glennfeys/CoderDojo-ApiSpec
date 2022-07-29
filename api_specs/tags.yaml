@@ -1,0 +1,239 @@
+openapi: 3.0.0
+
+paths:
+    /tags:
+      get:
+        tags:
+          - tag
+        description: Gets a (filtered) list of tags. Can be ordered by name.
+        summary: Gets a (filtered) list of tags
+        operationId: getTags
+        parameters:
+          - in: query
+            name: name
+            description: Filter by name
+            schema:
+              type: string
+          - $ref: 'core.yaml#/components/parameters/orderDir'
+        responses:
+          '200':
+            description: Successful operation
+            content:
+              application/hal+json:
+                schema:
+                  $ref: '#/components/schemas/TagList'
+          '400':
+            description: Invalid parameters
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/GetTagsError'
+          default:
+            $ref: 'core.yaml#/components/responses/DefaultError'
+
+      post:
+        x-roles: [admin, lead]
+        security:
+          - bearerAuth: []
+        tags:
+          - tag
+        description: Creates a tag
+        summary: Creates a tag
+        operationId: createTag
+        requestBody:
+          $ref: '#/components/requestBodies/TagBody'
+        responses:
+          '201':
+            description: Tag successfully created
+            content:
+              application/hal+json:
+                schema:
+                  $ref: '#/components/schemas/Tag'
+          '400':
+            description: Invalid request body
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/TagError'
+          '401':
+            $ref: 'core.yaml#/components/responses/UnauthorizedError'
+          '404':
+            $ref: 'core.yaml#/components/responses/NotFoundError'
+          default:
+            $ref: 'core.yaml#/components/responses/DefaultError'
+
+    /tags/{id}:
+      get:
+        tags:
+          - tag
+        description: Gets a tag by id
+        summary: Gets a tag by id
+        operationId: getTag
+        parameters:
+          - $ref: 'core.yaml#/components/parameters/pathId'
+        responses:
+          '200':
+            description: Successful operation
+            content:
+              application/hal+json:
+                schema:
+                  $ref: '#/components/schemas/Tag'
+          '404':
+            $ref: 'core.yaml#/components/responses/NotFoundError'
+          default:
+            $ref: 'core.yaml#/components/responses/DefaultError'
+
+      put:
+        x-roles: [admin, lead]
+        security:
+          - bearerAuth: []
+        tags:
+          - tag
+        description: Updates a tag by id
+        summary: Updates a tag by id
+        operationId: updateTag
+        parameters:
+          - $ref: 'core.yaml#/components/parameters/pathId'
+        requestBody:
+          $ref: '#/components/requestBodies/TagBody'
+        responses:
+          '200':
+            description: Tag successfully updated
+            content:
+              application/hal+json:
+                schema:
+                  $ref: '#/components/schemas/Tag'
+          '400':
+            description: Invalid request body
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/TagError'
+          '401':
+            $ref: 'core.yaml#/components/responses/UnauthorizedError'
+          '404':
+            $ref: 'core.yaml#/components/responses/NotFoundError'
+          default:
+            $ref: 'core.yaml#/components/responses/DefaultError'
+
+      delete:
+        x-roles: [admin, lead]
+        security:
+          - bearerAuth: []
+        tags:
+          - tag
+        description: Deletes a tag by id
+        summary: Deletes a tag by id
+        operationId: deleteTag
+        parameters:
+          - $ref: 'core.yaml#/components/parameters/pathId'
+        responses:
+          '204':
+            description: Tag successfully deleted
+          '401':
+            $ref: 'core.yaml#/components/responses/UnauthorizedError'
+          '404':
+            $ref: 'core.yaml#/components/responses/NotFoundError'
+          default:
+            $ref: 'core.yaml#/components/responses/DefaultError'
+
+components:
+    requestBodies:
+      TagBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTag'
+
+    schemas:
+      # Schemas for the /tags route
+      NewTag:
+        type: object
+        required:
+          - name
+        properties:
+          name:
+            type: string
+
+      Tag:
+        allOf:
+          - $ref: "#/components/schemas/NewTag"
+          - type: object
+            required:
+              - id
+              - _links
+            properties:
+              id:
+                type: string
+              _links:
+                type: object
+                required:
+                  - self
+                properties:
+                  self:
+                    $ref: 'core.yaml#/components/schemas/LinkObject'
+                  put:
+                    $ref: 'core.yaml#/components/schemas/LinkObject'
+                  delete:
+                    $ref: 'core.yaml#/components/schemas/LinkObject'
+                  tags:
+                    $ref: 'core.yaml#/components/schemas/LinkObject'
+
+      TagList:
+        description: Model for a list of tags
+        type: object
+        required:
+          - _embedded
+          - _links
+        properties:
+          _embedded:
+            type: object
+            required:
+              - tags
+            properties:
+              tags:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+              count:
+                $ref: 'core.yaml#/components/schemas/Count'
+          _links:
+            type: object
+            required:
+              - self
+            properties:
+              self:
+                $ref: 'core.yaml#/components/schemas/LinkObject'
+              post:
+                $ref: 'core.yaml#/components/schemas/LinkObject'
+              root:
+                $ref: 'core.yaml#/components/schemas/LinkObject'
+
+      # Error schemas for the /tags route
+
+      TagError:
+        allOf:
+          - $ref: 'core.yaml#/components/schemas/Error'
+          - description: Error that specifies how the fields should be filled when filled in the wrong manner
+            type: object
+            properties:
+              fieldErrors:
+                type: object
+                properties:
+                  name:
+                    type: string
+
+      GetTagsError:
+        allOf:
+          - $ref: 'core.yaml#/components/schemas/Error'
+          - description: Specifies what was wrong with the query parameters
+            type: object
+            properties:
+              fieldErrors:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  orderDir:
+                    type: string

@@ -1,0 +1,427 @@
+openapi: 3.0.0
+
+paths:
+  /sessions:
+    get:
+      tags:
+        - session
+      description: Gets a (filtered) list of sessions, can be ordered by name
+      summary: Gets a (filtered) list of sessions
+      operationId: getSessions
+      parameters:
+        - in: query
+          name: name
+          description: Filter by name
+          schema:
+            type: string
+        - $ref: 'reports.yaml#/components/parameters/dateMin'
+        - $ref: 'reports.yaml#/components/parameters/dateMax'
+        - $ref: 'reports.yaml#/components/parameters/minAge'
+        - $ref: 'reports.yaml#/components/parameters/maxAge'
+        - $ref: 'reports.yaml#/components/parameters/dojoId'
+        - $ref: 'reports.yaml#/components/parameters/eventId'
+        - $ref: 'reports.yaml#/components/parameters/tagIds'
+        - $ref: 'reports.yaml#/components/parameters/technologyIds'
+        - $ref: 'core.yaml#/components/parameters/page'
+        - $ref: 'core.yaml#/components/parameters/size'
+        - $ref: 'core.yaml#/components/parameters/orderBy'
+        - $ref: 'core.yaml#/components/parameters/orderDir'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/SessionList'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetSessionsError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - event
+        - session
+      x-roles: [admin, lead]
+      description: Creates a session for an event
+      summary: Creates a session for an event
+      operationId: createSession
+      requestBody:
+        $ref: '#/components/requestBodies/PostSessionBody'
+      responses:
+        '201':
+          description: Session successfully created
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /sessions/{id}:
+    get:
+      tags:
+        - session
+      description: Gets a session by id
+      summary: Gets a session by id
+      operationId: getSession
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    put:
+      security:
+        - bearerAuth: []
+      tags:
+        - session
+      x-roles: [admin, lead]
+      description: Updates a session by id
+      summary: Updates a session by id
+      operationId: updateSession
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      requestBody:
+        $ref: '#/components/requestBodies/PutSessionBody'
+      responses:
+        '200':
+          description: Session successfully updated
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    patch:
+      tags:
+        - session
+      x-roles: [admin, lead]
+      security:
+        - bearerAuth: []
+      description: Patches a session by id
+      summary: Patches a session by id
+      operationId: patchSession
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      requestBody:
+        $ref: 'core.yaml#/components/requestBodies/PatchBody'
+      responses:
+        '200':
+          description: Session successfully patched
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    delete:
+      tags:
+        - session
+      x-roles: [admin, lead]
+      security:
+        - bearerAuth: []
+      description: Deletes a session by id
+      summary: Deletes a session by id
+      operationId: deleteSession
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '204':
+          description: Session successfully deleted
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+components:
+  requestBodies:
+    PostSessionBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NewSession'
+
+    PutSessionBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdatedSession'
+
+  schemas:
+    # Schemas for the /sessions route
+
+    BasicSession:
+      description: Model for basic session 
+      type: object
+      required:
+        - name
+        - description
+        - capacity
+      properties:
+        name:
+          type: string
+        cancelled:
+          type: boolean
+        description:
+          type: string
+        capacity:
+          type: integer
+        minAge:
+          type: integer
+          description: Minimum recommended age
+        maxAge:
+          type: integer
+          description: Maximum recommended age
+          
+    UpdatedSession:
+      allOf:
+        - $ref: "#/components/schemas/BasicSession"
+        - type: object
+          description: Model for an updated session
+          required:
+            - eventId
+          properties:
+            tagIds:
+              type: array
+              items:
+                type: string
+              description: IDs of tags for this session
+            technologyIds:
+              type: array
+              items:
+                type: string
+              description:
+                IDs of the technologies of this session
+
+    NewSession:
+      allOf:
+        - $ref: "#/components/schemas/UpdatedSession"
+        - type: object
+          description: Model for a new session
+          required:
+            - eventId
+          properties:
+            eventId:
+              type: string
+              description: The ID for the event of this session
+
+    Session:
+      allOf:
+        - $ref: "#/components/schemas/BasicSession"
+        - type: object
+          description: Model for fields in a session
+          required:
+            - id
+            - ticketsAvailable
+            - _links
+          properties:
+            id:
+              type: string
+            ticketsAvailable:
+              type: integer
+            tags:
+              type: array
+              description: Tags that can provide information for better searchability and statistics
+              items:
+                $ref: 'tags.yaml#/components/schemas/Tag'
+            technologies:
+              type: array
+              items:
+                $ref: 'technologies.yaml#/components/schemas/Technology'
+              description:
+                Technologies of this session. They are meant to let the ninjas who
+                want to participate know what they will learn about in this session.
+            archived:
+              type: boolean
+              description:
+                Whether this session is archived or not. An archived session
+                can be recovered with a PATCH.
+            _links:
+              type: object
+              required:
+                - self
+              properties:
+                self:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                put:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                patch:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                delete:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                event:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                sessions:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                ninjaTickets:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                ninjaTicketPost:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+            _templates:
+              type: object
+              properties:
+                put:
+                  $ref: 'core.yaml#/components/schemas/FormTemplate'
+                patch:
+                  $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    SessionList:
+      description: Model for a list of sessions
+      type: object
+      required:
+        - _embedded
+        - _links
+      properties:
+        _embedded:
+          type: object
+          required:
+            - sessions
+          properties:
+            sessions:
+              type: array
+              items:
+                $ref: '#/components/schemas/Session'
+            count:
+                $ref: 'core.yaml#/components/schemas/Count'
+        _links:
+          type: object
+          required:
+            - self
+          properties:
+            self:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            post:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            root:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            next:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            prev:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            first:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            last:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+        _templates:
+            type: object
+            properties:
+              post:
+                $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    # Error schemas for the /sessions route
+    GetSessionsError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - description: Error that specifies what was wrong in the query parameters
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                name:
+                  type: string
+                dateMin:
+                  type: string
+                dateMax:
+                  type: string
+                minAge:
+                  type: string
+                maxAge:
+                  type: string
+                dojoId:
+                  type: string
+                eventId:
+                  type: string
+                tagIds:
+                  type: string
+                technologyIds:
+                  type: string
+                page:
+                  type: string
+                size:
+                  type: string
+                orderBy:
+                  type: string
+                orderDir:
+                  type: string
+
+    SessionError:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - description: Error that can specify how the fields should be filled when filled in the wrong manner
+          type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                name:
+                  type: string
+                cancelled:
+                  type: string
+                description:
+                  type: string
+                capacity:
+                  type: string
+                minAge:
+                  type: string
+                maxAge:
+                  type: string
+                tagIds:
+                  type: string
+                technologyIds:
+                  type: string
+                eventId:
+                  type: string

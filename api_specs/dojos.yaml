@@ -1,0 +1,419 @@
+openapi: 3.0.0
+
+paths:
+  /dojos:
+    get:
+      description: Gets a (filtered) list of dojos
+      summary: Gets a (filtered) list of dojos, can be ordered by name, city
+      operationId: getDojos
+      tags:
+        - dojo
+      parameters:
+        - in: query
+          name: name
+          description: Filter by name
+          schema:
+            type: string
+        - $ref: 'reports.yaml#/components/parameters/zipCode'
+        - $ref: 'reports.yaml#/components/parameters/city'
+        - $ref: 'reports.yaml#/components/parameters/region'
+        - $ref: 'reports.yaml#/components/parameters/country'
+        - $ref: 'reports.yaml#/components/parameters/tagIds'
+        - $ref: 'reports.yaml#/components/parameters/languages'
+        - $ref: 'core.yaml#/components/parameters/page'
+        - $ref: 'core.yaml#/components/parameters/size'
+        - $ref: 'core.yaml#/components/parameters/orderBy'
+        - $ref: 'core.yaml#/components/parameters/orderDir'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/DojoList'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetDojosError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    post:
+      description: Creates a new dojo
+      summary: Creates a new dojo
+      operationId: createDojo
+      x-roles: [admin]
+      security:
+        - bearerAuth: []
+      tags:
+        - dojo
+      requestBody:
+        $ref: '#/components/requestBodies/DojoBody'
+      responses:
+        '201':
+          description: Dojo created
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Dojo'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DojoError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+  /dojos/{id}:
+    get:
+      description: Gets a dojo by id
+      summary: Gets a dojo by id
+      operationId: getDojo
+      tags:
+        - dojo
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Dojo'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    put:
+      description: Updates a dojo by id
+      summary: Updates a dojo by id
+      operationId: updateDojo
+      x-roles: [admin, lead]
+      security:
+        - bearerAuth: []
+      tags:
+        - dojo
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      requestBody:
+        $ref: '#/components/requestBodies/DojoBody'
+      responses:
+        '200':
+          description: Dojo successfully updated
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Dojo'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DojoError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    patch:
+      description: Patches a dojo by id
+      summary: Patches a dojo by id
+      x-roles: [admin, lead]
+      security:
+        - bearerAuth: []
+      tags:
+        - dojo
+      operationId: patchDojo
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      requestBody:
+        $ref: 'core.yaml#/components/requestBodies/PatchBody'
+      responses:
+        '200':
+          description: Dojo successfully patched
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Dojo'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DojoError'
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+    delete:
+      description: Deletes a dojo by id
+      summary: Deletes a dojo by id
+      operationId: deleteDojo
+      x-roles: [admin]
+      security:
+        - bearerAuth: []
+      tags:
+        - dojo
+      parameters:
+        - $ref: 'core.yaml#/components/parameters/pathId'
+      responses:
+        '204':
+          description: Dojo successfully deleted
+        '401':
+          $ref: 'core.yaml#/components/responses/UnauthorizedError'
+        '404':
+          $ref: 'core.yaml#/components/responses/NotFoundError'
+        default:
+          $ref: 'core.yaml#/components/responses/DefaultError'
+
+components:
+  requestBodies:
+    DojoBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NewDojo'
+
+  schemas:
+    # Schemas for the /dojos route
+    BasicDojo:
+      description: Model for basic dojo
+      type: object
+      required:
+        - name
+        - description
+        - email
+        - languages
+        - address
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        email:
+          type: string
+          format: email
+        laptopAmount:
+          type: integer
+          description: Amount of laptops this dojo has for events
+        languages:
+          type: array
+          items:
+            type: string
+            format: ISO 639-1
+        address:
+          $ref: '#/components/schemas/DojoAddress'
+
+    NewDojo:
+      allOf:
+        - $ref: "#/components/schemas/BasicDojo"
+        - type: object
+          description: Model for new or updated dojo
+          properties:
+            tagIds:
+              type: array
+              items:
+                type: string
+
+    Dojo:
+      allOf:
+        - $ref: "#/components/schemas/BasicDojo"
+        - type: object
+          description: Model for dojo response
+          properties:
+            id:
+              type: string
+            tags:
+              type: array
+              items:
+                $ref: 'tags.yaml#/components/schemas/Tag'
+            archived:
+              type: boolean
+              description:
+                Whether this dojo is archived or not. An archived dojo
+                can be recovered with a PATCH.
+            _links:
+              type: object
+              required:
+                - self
+              properties:
+                self:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                put:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                patch:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                delete:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                dojos:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                events:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                eventPost:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                subscriptions:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                subscriptionPost:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                coachApplications:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                coachApplicationPost:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+                roles:
+                  $ref: 'core.yaml#/components/schemas/LinkObject'
+            _templates:
+              type: object
+              properties:
+                put:
+                  $ref: 'core.yaml#/components/schemas/FormTemplate'
+                patch:
+                  $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    DojoList:
+      description: Model for a list of dojos
+      type: object
+      required:
+        - _embedded
+        - _links
+      properties:
+        _embedded:
+          type: object
+          required:
+            - dojos
+          properties:
+            dojos:
+              type: array
+              items:
+                $ref: '#/components/schemas/Dojo'
+            count:
+              $ref: 'core.yaml#/components/schemas/Count'
+        _links:
+          type: object
+          required:
+            - self
+          properties:
+            self:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            post:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            root:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            next:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            prev:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            first:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+            last:
+              $ref: 'core.yaml#/components/schemas/LinkObject'
+        _templates:
+          type: object
+          properties:
+            post:
+              $ref: 'core.yaml#/components/schemas/FormTemplate'
+
+    DojoAddress:
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Address'
+        - description: Model for an address of a dojo with coordinates attached
+          type: object
+          properties:
+            coordinates:
+              type: object
+              properties:
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+              required:
+                - latitude
+                - longitude
+          required:
+            - streetWithNumber
+            - city
+            - country
+            - coordinates
+
+    # Error schemas for the /dojos route
+
+    GetDojosError:
+      description: Error that specifies what was wrong in the query parameters
+      allOf:
+        - $ref: 'core.yaml#/components/schemas/Error'
+        - type: object
+          properties:
+            fieldErrors:
+              type: object
+              properties:
+                name:
+                  type: string
+                zipCode:
+                  type: string
+                city:
+                  type: string
+                region:
+                  type: string
+                country:
+                  type: string
+                tagIds:
+                  type: string
+                languages:
+                  type: string
+                page:
+                  type: string
+                size:
+                  type: string
+                orderBy:
+                  type: string
+                orderDir:
+                  type: string
+
+    DojoError:
+      allOf:
+      - $ref: 'core.yaml#/components/schemas/Error'
+      - type: object
+        description: Error that can specify how the fields should be filled when filled in the wrong manner
+        properties:
+          fieldErrors:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              email:
+                type: string
+              laptopAmount:
+                type: string
+              languages:
+                type: string
+              tagIds:
+                type: string
+              address.streetWithNumber:
+                type: string
+              address.city:
+                type: string
+              address.zipCode:
+                type: string
+              address.region:
+                type: string
+              address.country:
+                type: string
+              address.coordinates.latitude:
+                type: string
+              address.coordinates.longitude:
+                type: string
